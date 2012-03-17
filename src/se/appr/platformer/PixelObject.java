@@ -11,15 +11,15 @@ import java.util.Scanner;
 import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
 import javax.media.opengl.GL2ES2;
-import javax.vecmath.Matrix4f;
-import javax.vecmath.Point3f;
-import javax.vecmath.Point3i;
-import javax.vecmath.Vector2f;
-import javax.vecmath.Vector3f;
 
 import se.appr.platformer.VBOUtil.VertexBufferObject;
 import se.appr.platformer.editor.EditorScene;
 
+import com.github.kanelbulle.oglmathj.Matrix3f;
+import com.github.kanelbulle.oglmathj.Matrix4f;
+import com.github.kanelbulle.oglmathj.OGLMath;
+import com.github.kanelbulle.oglmathj.Vector2f;
+import com.github.kanelbulle.oglmathj.Vector3f;
 import com.jogamp.opengl.util.texture.Texture;
 
 public class PixelObject implements WorldObject {
@@ -29,32 +29,32 @@ public class PixelObject implements WorldObject {
 	ArrayList<Pixel>	pixels	= new ArrayList<Pixel>();
 
 	public class Pixel {
-		Point3i		position;
+		Vector3f	position;
 		Vector2f	texture;
 
 		public Pixel(Pixel p) {
-			this.position = new Point3i(p.position);
-			this.texture = new Vector2f(p.texture);
+			this.position = p.position;
+			this.texture = p.texture;
 		}
 
 		public Pixel(int p1, int p2, int p3, float t1, float t2) {
-			position = new Point3i(p1, p2, p3);
+			position = new Vector3f(p1, p2, p3);
 			texture = new Vector2f(t1, t2);
 		}
 		
-		public Pixel(Point3i position) {
+		public Pixel(Vector3f position) {
 			this.position = position;
 			this.texture = EditorScene.mColorPicker.getTexCoord();
 		}
 
-		public Pixel(Point3i position, float t1, float t2) {
+		public Pixel(Vector3f position, float t1, float t2) {
 			this.position = position;
 			texture = new Vector2f(t1, t2);
 		}
 
 		@Override
 		public String toString() {
-			return "{" + position.x + ", " + position.y + ", " + position.z + "}";
+			return "{" + position.x() + ", " + position.y() + ", " + position.z() + "}";
 		}
 	}
 
@@ -100,11 +100,11 @@ public class PixelObject implements WorldObject {
 	public void writeToStream(BufferedWriter bw) throws IOException {
 		bw.write("" + pixels.size() + "\n");
 		for (Pixel p : pixels) {
-			bw.write("" + p.position.x);
-			bw.write(" " + p.position.y);
-			bw.write(" " + p.position.z);
-			bw.write(" " + p.texture.x);
-			bw.write(" " + p.texture.y + "\n");
+			bw.write("" + (int) p.position.x());
+			bw.write(" " + (int) p.position.y());
+			bw.write(" " + (int) p.position.z());
+			bw.write(" " + p.texture.x());
+			bw.write(" " + p.texture.y() + "\n");
 		}
 	}
 
@@ -114,13 +114,17 @@ public class PixelObject implements WorldObject {
 	}
 
 	public void removePixel(Pixel pixel) {
-		removePixel(pixel.position.x, pixel.position.y, pixel.position.z);
+		removePixel(pixel.position);
 	}
 
 	public void removePixel(int x, int y, int z) {
+		removePixel(new Vector3f(x, y, z));
+	}
+	
+	public void removePixel(Vector3f pos) {
 		for (int i = 0; i < pixels.size(); i++) {
 			Pixel p = pixels.get(i);
-			if (p.position.x == x && p.position.y == y && p.position.z == z) {
+			if (p.position.equals(pos, 0.1f)) {
 				pixels.remove(i);
 				break;
 			}
@@ -135,7 +139,7 @@ public class PixelObject implements WorldObject {
 	@Override
 	public void render(GL2 gl, Matrix4f projection, Matrix4f modelview) {
 		shader.useShader(gl);
-
+		
 		shader.setProjectionMatrix(gl, projection);
 
 		texture.enable(gl);
@@ -146,18 +150,12 @@ public class PixelObject implements WorldObject {
 		vbo.useVBO(gl);
 
 		for (Pixel pixel : pixels) {
-			Matrix4f tmpModelview = new Matrix4f(modelview);
+			Matrix4f tmpModelview = modelview.translate(pixel.position.x(), pixel.position.y(), pixel.position.z());
 
-			MatrixUtil
-					.translate(tmpModelview, pixel.position.x, pixel.position.y, pixel.position.z);
-
+			Matrix3f normalMatrix = tmpModelview.invert().transpose().subMatrix3(Matrix4f.UPPER_LEFT);
+			
 			shader.setModelviewMatrix(gl, tmpModelview);
-
-			Matrix4f modelInverse = new Matrix4f(tmpModelview);
-			modelInverse.invert();
-			modelInverse.transpose();
-
-			shader.setNormalMatrix(gl, modelInverse);
+			shader.setNormalMatrix(gl, normalMatrix);			
 			shader.setTexCoord(gl, pixel.texture);
 
 			gl.glDrawElements(GL.GL_TRIANGLES, vbo.indexCount, GL.GL_UNSIGNED_INT, 0);
@@ -175,48 +173,48 @@ public class PixelObject implements WorldObject {
 			return;
 		}
 
-		Vector3f win = new Vector3f(e.getX(), viewport.height - e.getY(), 0);
+		float wx = e.getX();
+		float wy = viewport.height - e.getY();
 		FloatBuffer fb = FloatBuffer.allocate(1);
-		gl.glReadPixels((int) win.x, (int) win.y, 1, 1, GL2ES2.GL_DEPTH_COMPONENT, GL.GL_FLOAT, fb);
-		win.z = fb.get(0);
+		gl.glReadPixels((int) wx, (int) wy, 1, 1, GL2ES2.GL_DEPTH_COMPONENT, GL.GL_FLOAT, fb);
+		Vector3f win = new Vector3f(wx, wy, fb.get(0));
 
-		Point3f obj = se.appr.platformer.MatrixUtil.unProject(win, modelview, projection, viewport);
+		Vector3f obj = OGLMath.unProject(win, modelview, projection, viewport);
 
 		for (int i = 0; i < pixels.size(); i++) {
 			Pixel pixel = pixels.get(i);
-			float dist = obj.distance(new Point3f(pixel.position.x, pixel.position.y,
-					pixel.position.z));
+			
+			float dist = obj.distance(pixel.position);
 			if (dist < 0.75) {
 				if (e.getButton() == MouseEvent.BUTTON1) {
-					Vector3f objCenter = new Vector3f(pixel.position.x, pixel.position.y,
-							pixel.position.z);
-					Vector3f dir = new Vector3f();
-					dir.sub(obj, objCenter);
+					Vector3f dir = obj.sub(pixel.position);
 
 					// find which side dir points towards
 					int idx = 0;
-					float max = Math.abs(dir.x);
-					if (Math.abs(dir.y) > max) {
+					float max = Math.abs(dir.x());
+					if (Math.abs(dir.y()) > max) {
 						idx = 1;
-						max = Math.abs(dir.y);
+						max = Math.abs(dir.y());
 					}
-					if (Math.abs(dir.z) > max)
+					if (Math.abs(dir.z()) > max)
 						idx = 2;
 
-					Point3i newp = new Point3i(pixel.position);
+					float newx = pixel.position.x();
+					float newy = pixel.position.y();
+					float newz = pixel.position.z();
 					switch (idx) {
 					case 0:
-						newp.x += dir.x > 0 ? 1 : -1;
+						newx += dir.x() > 0 ? 1 : -1;
 						break;
 					case 1:
-						newp.y += dir.y > 0 ? 1 : -1;
+						newy += dir.y() > 0 ? 1 : -1;
 						break;
 					case 2:
-						newp.z += dir.z > 0 ? 1 : -1;
+						newz += dir.z() > 0 ? 1 : -1;
 						break;
 					}
 
-					addPixel(new Pixel(newp));
+					addPixel(new Pixel(new Vector3f(newx, newy, newz)));
 				} else if (e.getButton() == MouseEvent.BUTTON3) {
 					removePixel(pixel);
 				}

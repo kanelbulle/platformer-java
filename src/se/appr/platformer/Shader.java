@@ -9,10 +9,11 @@ import javax.media.opengl.GL2;
 import javax.media.opengl.GL2ES2;
 import javax.media.opengl.GL2GL3;
 import javax.media.opengl.GL3;
-import javax.vecmath.Matrix4f;
-import javax.vecmath.Vector2f;
-import javax.vecmath.Vector3f;
 
+import com.github.kanelbulle.oglmathj.Matrix3f;
+import com.github.kanelbulle.oglmathj.Matrix4f;
+import com.github.kanelbulle.oglmathj.Vector2f;
+import com.github.kanelbulle.oglmathj.Vector3f;
 import com.jogamp.common.nio.Buffers;
 
 public class Shader {
@@ -110,24 +111,24 @@ public class Shader {
 	}
 
 	public void setProjectionMatrix(GL2 gl, Matrix4f matrix) {
-		MatrixUtil.toArray4f(matrix, floatBuffer);
+		matrix.toOpenGLArray(floatBuffer);
 		gl.glUniformMatrix4fv(mUniforms[UNIFORM_PROJECTION_MATRIX], 1, false, floatBuffer, 0);
 	}
 
-	public void setModelviewMatrix(GL2 gl, Matrix4f matrix) {
-		MatrixUtil.toArray4f(matrix, floatBuffer);
+	public void setModelviewMatrix(GL2 gl, com.github.kanelbulle.oglmathj.Matrix4f matrix) {
+		matrix.toOpenGLArray(floatBuffer);
 		gl.glUniformMatrix4fv(mUniforms[UNIFORM_MODELVIEW_MATRIX], 1, false, floatBuffer, 0);
 	}
 
-	public void setNormalMatrix(GL2 gl, Matrix4f matrix) {
-		MatrixUtil.toArray3f(matrix, floatBuffer);
+	public void setNormalMatrix(GL2 gl, Matrix3f matrix) {
+		matrix.toOpenGLArray(floatBuffer);
 		gl.glUniformMatrix3fv(mUniforms[UNIFORM_NORMAL_MATRIX], 1, false, floatBuffer, 0);
 	}
 
 	public void setLight1(GL2 gl, Vector3f light) {
-		floatBuffer[0] = light.x;
-		floatBuffer[1] = light.y;
-		floatBuffer[2] = light.z;
+		floatBuffer[0] = light.x();
+		floatBuffer[1] = light.y();
+		floatBuffer[2] = light.z();
 		gl.glUniform3fv(mUniforms[UNIFORM_LIGHT_1], 1, floatBuffer, 0);
 	}
 
@@ -140,7 +141,7 @@ public class Shader {
 	}
 
 	public void setTexCoord(GL2 gl, Vector2f coord) {
-		gl.glUniform2f(mUniforms[UNIFORM_TEXCOORD], coord.x, coord.y);
+		gl.glUniform2f(mUniforms[UNIFORM_TEXCOORD], coord.x(), coord.y());
 	}
 
 	private static void printShaderError(final GL2GL3 gl, int shader, int type, String name) {

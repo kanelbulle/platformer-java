@@ -5,14 +5,12 @@ import java.awt.event.MouseEvent;
 
 import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
-import javax.vecmath.Matrix4f;
-import javax.vecmath.Vector2f;
 
 import se.appr.platformer.VBOUtil.VertexBufferObject;
 
+import com.github.kanelbulle.oglmathj.Matrix4f;
+import com.github.kanelbulle.oglmathj.Vector2f;
 import com.jogamp.opengl.util.texture.Texture;
-
-import cz.advel.modern3d.util.MatrixUtil;
 
 public class ColorPicker implements WorldObject {
 	public Vector2f		mSize;
@@ -33,7 +31,7 @@ public class ColorPicker implements WorldObject {
 	}
 
 	public Vector2f getTexCoord() {
-		return new Vector2f(mTexCoord);
+		return mTexCoord;
 	}
 
 	@Override
@@ -54,10 +52,9 @@ public class ColorPicker implements WorldObject {
 
 		shader.setTextureID(gl, 0);
 
-		Matrix4f view = new Matrix4f(modelview);
-		MatrixUtil
-				.translate(view, mPosition.x + mSize.x / 2.0f, mPosition.y + mSize.y / 2.0f, 0.0f);
-		MatrixUtil.scale(view, mSize.x, mSize.y, 1.0f);
+		Matrix4f view = modelview.translate(
+				mPosition.x() + mSize.x() / 2.0f, mPosition.y() + mSize.y() / 2.0f, 0.0f);
+		view = view.scale(mSize.x(), mSize.y(), 1.0f);
 
 		shader.setModelviewMatrix(gl, view);
 
@@ -76,9 +73,9 @@ public class ColorPicker implements WorldObject {
 		float y = e.getY();
 
 		// TODO fix the bounds check here
-		if (x < mPosition.x + mSize.x && y < mSize.y) {
-			mTexCoord.x = 1.0f - ((x - (x % 8.0f) + 4.0f) / mSize.x);
-			mTexCoord.y = 1.0f - ((y - (y % 8.0f) + 4.0f) / mSize.y);
+		if (x < mPosition.x() + mSize.x() && y < mSize.y()) {
+			mTexCoord = new Vector2f(1.0f - ((x - (x % 8.0f) + 4.0f) / mSize.x()), 1.0f - ((y
+					- (y % 8.0f) + 4.0f) / mSize.y()));
 
 			System.out.println(mTexCoord);
 

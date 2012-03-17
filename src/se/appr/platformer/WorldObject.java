@@ -1,7 +1,8 @@
 package se.appr.platformer;
 
 import javax.media.opengl.GL2;
-import javax.vecmath.Matrix4f;
+
+import com.github.kanelbulle.oglmathj.Matrix4f;
 
 public interface WorldObject {
 	public void update(final GL2 gl, double timedx);

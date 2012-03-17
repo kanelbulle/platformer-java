@@ -17,14 +17,14 @@ import javax.media.opengl.GL2;
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLEventListener;
 import javax.swing.JOptionPane;
-import javax.vecmath.Matrix4f;
-import javax.vecmath.Vector2f;
-import javax.vecmath.Vector3f;
 
 import se.appr.platformer.ColorPicker;
 import se.appr.platformer.ObjectSequence;
 import se.appr.platformer.TextureLoader;
-import cz.advel.modern3d.util.MatrixUtil;
+
+import com.github.kanelbulle.oglmathj.Matrix4f;
+import com.github.kanelbulle.oglmathj.OGLMath;
+import com.github.kanelbulle.oglmathj.Vector2f;
 
 public class EditorScene extends WindowAdapter implements GLEventListener, KeyListener,
 		MouseWheelListener, MouseListener, MouseMotionListener {
@@ -44,7 +44,7 @@ public class EditorScene extends WindowAdapter implements GLEventListener, KeyLi
 	public void init(GLAutoDrawable drawable) {
 		drawable.setGL(new DebugGL2(drawable.getGL().getGL2()));
 		final GL2 gl = drawable.getGL().getGL2();
-
+		
 		gl.glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 		gl.glEnable(GL.GL_DEPTH_TEST);
 		gl.glDepthFunc(GL.GL_LEQUAL);
@@ -78,11 +78,10 @@ public class EditorScene extends WindowAdapter implements GLEventListener, KeyLi
 		gl.glClear(GL.GL_COLOR_BUFFER_BIT);
 		gl.glClear(GL.GL_DEPTH_BUFFER_BIT);
 
-		MatrixUtil.setPerspective(
-				mProjection, 100.0f, mViewport.width / (float) mViewport.height, 0.1f, 100.0f);
-
-		mModelview.setIdentity();
-		mModelview.setTranslation(new Vector3f(0.0f, 0.0f, (float) mWheelRotation - 10.0f));
+		mProjection = OGLMath.perspective(100.0f, mViewport.width / (float) mViewport.height, 0.1f, 100.0f);
+		
+		mModelview = new Matrix4f();
+		mModelview = mModelview.translate(0.0f, 0.0f, (float) mWheelRotation - 10.0f);
 
 		mSequence.render(gl, mProjection, mModelview);
 
@@ -91,9 +90,8 @@ public class EditorScene extends WindowAdapter implements GLEventListener, KeyLi
 		}
 
 		// ortho
-
-		mModelview.setIdentity();
-		MatrixUtil.setOrtho(mProjection, 0, mViewport.width, 0, mViewport.height, -1.0f, 1.0f);
+		mModelview = new Matrix4f();
+		mProjection = OGLMath.ortho(0, mViewport.width, 0, mViewport.height, -1.0f, 1.0f);
 
 		mColorPicker.render(gl, mProjection, mModelview);
 
@@ -110,7 +108,7 @@ public class EditorScene extends WindowAdapter implements GLEventListener, KeyLi
 		mViewport.width = width;
 		mViewport.height = height;
 
-		mColorPicker.mPosition.y = height - mColorPicker.mSize.y;
+		mColorPicker.mPosition = new Vector2f(x, height - mColorPicker.mSize.y());
 	}
 
 	@Override
@@ -152,33 +150,31 @@ public class EditorScene extends WindowAdapter implements GLEventListener, KeyLi
 	public void mouseDragged(MouseEvent arg0) {
 		if (mLastMousePosition == null) {
 			mLastMousePosition = new Vector2f();
-			mLastMousePosition.x = arg0.getX();
-			mLastMousePosition.y = arg0.getY();
+			mLastMousePosition = new Vector2f(arg0.getX(), arg0.getY());
 			return;
 		}
 		
 		if (arg0.getButton() == MouseEvent.BUTTON2
 				|| mShiftIsDown) {
-			mSequence.mRotation.y -= (mLastMousePosition.x - (float) arg0.getX()) / 75.0f;
-			mSequence.mRotation.x -= (mLastMousePosition.y - (float) arg0.getY()) / 75.0f;
-
-			if (mSequence.mRotation.x > Math.PI / 2)
-				mSequence.mRotation.x = (float) (Math.PI / 2);
-			if (mSequence.mRotation.x < -Math.PI / 2)
-				mSequence.mRotation.x = (float) (-Math.PI / 2);
+			float ry = mSequence.mRotation.y() - (mLastMousePosition.x() - (float) arg0.getX()) / 75.0f;
+			float rx = mSequence.mRotation.x() - (mLastMousePosition.y() - (float) arg0.getY()) / 75.0f;
+			
+			if (rx > Math.PI / 2)
+				rx = (float) (Math.PI / 2);
+			if (rx < -Math.PI / 2)
+				rx = (float) (-Math.PI / 2);
+			
+			mSequence.mRotation = new Vector2f(rx, ry);
 		} else if (arg0.getButton() == MouseEvent.BUTTON3) {
-			float xdiff = -(mLastMousePosition.x - (float) arg0.getX()) / 75.0f;
-			float ydiff = (mLastMousePosition.y - (float) arg0.getY()) / 75.0f;
+			float xdiff = -(mLastMousePosition.x() - (float) arg0.getX()) / 75.0f;
+			float ydiff = (mLastMousePosition.y() - (float) arg0.getY()) / 75.0f;
 
-			float rot = mSequence.mRotation.y;
+			float rot = mSequence.mRotation.y();
 
-			mSequence.mPosition.x += xdiff * Math.cos(rot);
-			mSequence.mPosition.z += xdiff * Math.sin(rot);
-			mSequence.mPosition.y += ydiff;
+			mSequence.mPosition = mSequence.mPosition.add((float) (xdiff * Math.cos(rot)), ydiff, (float) (xdiff * Math.sin(rot)));
 		}
 
-		mLastMousePosition.x = arg0.getX();
-		mLastMousePosition.y = arg0.getY();
+		mLastMousePosition = new Vector2f(arg0.getX(), arg0.getY());
 	}
 
 	@Override
@@ -211,3 +207,4 @@ public class EditorScene extends WindowAdapter implements GLEventListener, KeyLi
 	}
 
 }
+;

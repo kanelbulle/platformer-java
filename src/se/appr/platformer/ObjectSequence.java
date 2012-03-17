@@ -27,9 +27,9 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 import javax.media.opengl.GL2;
-import javax.vecmath.Matrix4f;
-import javax.vecmath.Vector2f;
-import javax.vecmath.Vector3f;
+
+import com.github.kanelbulle.oglmathj.Vector2f;
+import com.github.kanelbulle.oglmathj.Vector3f;
 
 public class ObjectSequence implements WorldObject, ItemListener {
 	private final class AnimationButtonListener implements ActionListener {
@@ -245,11 +245,10 @@ public class ObjectSequence implements WorldObject, ItemListener {
 		}
 	}
 
-	private Matrix4f getModelview(Matrix4f modelview) {
-		Matrix4f view = new Matrix4f(modelview);
-		se.appr.platformer.MatrixUtil.rotate(view, mRotation.x, new Vector3f(1.0f, 0.0f, 0.0f));
-		se.appr.platformer.MatrixUtil.rotate(view, mRotation.y, new Vector3f(0.0f, 1.0f, 0.0f));
-		MatrixUtil.translate(view, mPosition);
+	private com.github.kanelbulle.oglmathj.Matrix4f getModelview(com.github.kanelbulle.oglmathj.Matrix4f modelview) {
+		com.github.kanelbulle.oglmathj.Matrix4f view = modelview.rotate(mRotation.x(), new com.github.kanelbulle.oglmathj.Vector3f(1.0f, 0.0f, 0.0f));
+		view = view.rotate(mRotation.y(), new com.github.kanelbulle.oglmathj.Vector3f(0.0f, 1.0f, 0.0f));
+		view = view.translate(mPosition.x(), mPosition.y(), mPosition.z());
 		return view;
 	}
 
@@ -275,15 +274,15 @@ public class ObjectSequence implements WorldObject, ItemListener {
 	}
 
 	@Override
-	public void render(GL2 gl, Matrix4f projection, Matrix4f modelview) {
-		Matrix4f view = getModelview(modelview);
+	public void render(GL2 gl, com.github.kanelbulle.oglmathj.Matrix4f projection, com.github.kanelbulle.oglmathj.Matrix4f modelview) {
+		com.github.kanelbulle.oglmathj.Matrix4f view = getModelview(modelview);
 
 		if (mCurrentIndex >= 0 && mCurrentIndex < mObjects.size()) {
 			mObjects.get(mCurrentIndex).render(gl, projection, view);
 		}
 	}
 
-	public void mouseClicked(GL2 gl, MouseEvent e, Matrix4f projection, Matrix4f modelview,
+	public void mouseClicked(GL2 gl, MouseEvent e, com.github.kanelbulle.oglmathj.Matrix4f projection, com.github.kanelbulle.oglmathj.Matrix4f modelview,
 			Rectangle viewport) {
 		mObjects.get(mCurrentIndex).mouseClicked(
 				gl, e, projection, getModelview(modelview), viewport);

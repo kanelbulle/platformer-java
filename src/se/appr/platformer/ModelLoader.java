@@ -10,8 +10,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import javax.vecmath.Vector2f;
-import javax.vecmath.Vector3f;
+import com.github.kanelbulle.oglmathj.Vector2f;
+import com.github.kanelbulle.oglmathj.Vector3f;
 
 public class ModelLoader {
 
@@ -40,19 +40,19 @@ public class ModelLoader {
 				indices.size());
 
 		for (VertexData vd : vertexData) {
-			vdata.put(vd.vertex.x);
-			vdata.put(vd.vertex.y);
-			vdata.put(vd.vertex.z);
-			vdata.put(vd.normal.x);
-			vdata.put(vd.normal.y);
-			vdata.put(vd.normal.z);
-			vdata.put(vd.texture.x);
-			vdata.put(vd.texture.y);
-			
-//			System.out.printf("v: {%f, %f, %f}, vt: {%f, %f}, vn: {%f, %f, %f}\n",
-//					vd.vertex.x, vd.vertex.y, vd.vertex.z,
-//					vd.texture.x, vd.texture.y,
-//					vd.normal.x, vd.normal.y, vd.normal.z);
+			vdata.put(vd.vertex.x());
+			vdata.put(vd.vertex.y());
+			vdata.put(vd.vertex.z());
+			vdata.put(vd.normal.x());
+			vdata.put(vd.normal.y());
+			vdata.put(vd.normal.z());
+			vdata.put(vd.texture.x());
+			vdata.put(vd.texture.y());
+
+			// System.out.printf("v: {%f, %f, %f}, vt: {%f, %f}, vn: {%f, %f, %f}\n",
+			// vd.vertex.x, vd.vertex.y, vd.vertex.z,
+			// vd.texture.x, vd.texture.y,
+			// vd.normal.x, vd.normal.y, vd.normal.z);
 		}
 
 		for (Integer i : indices) {
@@ -61,10 +61,10 @@ public class ModelLoader {
 
 		vdata.rewind();
 		idata.rewind();
-		
+
 		md.vertexData = vdata;
 		md.indices = idata;
-		
+
 		md.vertexCount = vertexData.size();
 		md.indicesCount = indices.size();
 
@@ -95,24 +95,18 @@ public class ModelLoader {
 					vertexData.clear();
 					indices.clear();
 				} else if (line.startsWith("v ")) {
-					Vector3f v = new Vector3f();
 					String[] s = line.split(" ");
-					v.x = Float.parseFloat(s[1]);
-					v.y = Float.parseFloat(s[2]);
-					v.z = Float.parseFloat(s[3]);
+					Vector3f v = new Vector3f(Float.parseFloat(s[1]), Float.parseFloat(s[2]),
+							Float.parseFloat(s[3]));
 					vertices.add(v);
 				} else if (line.startsWith("vt ")) {
-					Vector2f v = new Vector2f();
 					String[] s = line.split(" ");
-					v.x = Float.parseFloat(s[1]);
-					v.y = Float.parseFloat(s[2]);
+					Vector2f v = new Vector2f(Float.parseFloat(s[1]), Float.parseFloat(s[2]));
 					textures.add(v);
 				} else if (line.startsWith("vn ")) {
-					Vector3f v = new Vector3f();
 					String[] s = line.split(" ");
-					v.x = Float.parseFloat(s[1]);
-					v.y = Float.parseFloat(s[2]);
-					v.z = Float.parseFloat(s[3]);
+					Vector3f v = new Vector3f(Float.parseFloat(s[1]), Float.parseFloat(s[2]),
+							Float.parseFloat(s[3]));
 					normals.add(v);
 				} else if (line.startsWith("f ")) {
 					String[] f = line.split(" ");
